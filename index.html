@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic-Tac-Toe</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        @keyframes gradientBG {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        body {
+            font-family: 'Orbitron', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(-45deg, #1a1a2e, #16213e, #0f3460, #e94560);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            color: #e94560;
+        }
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        h1 {
+            margin-top: 0;
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            color: #00ffff;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-gap: 10px;
+            margin: 20px 0;
+        }
+        .cell {
+            width: 100px;
+            height: 100px;
+            background-color: rgba(15, 52, 96, 0.2);
+            border: 2px solid #e94560;
+            border-radius: 10px;
+            font-size: 48px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: #e94560;
+        }
+        .cell:hover {
+            background-color: rgba(233, 69, 96, 0.2);
+            transform: scale(1.05);
+        }
+        #result, #message {
+            font-size: 24px;
+            margin-bottom: 10px;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            color: #00ffff;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        #message {
+            font-size: 18px;
+            color: #e94560;
+            text-transform: none;
+        }
+        #reset {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 18px;
+            padding: 10px 20px;
+            cursor: pointer;
+            background-color: #00ffff;
+            color: #1a1a2e;
+            border: none;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: bold;
+        }
+        #reset:hover {
+            background-color: #e94560;
+            color: #00ffff;
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>Tic-Tac-Toe</h1>
+        <div id="result">Your turn (X)</div>
+        <div id="message"></div>
+        <div class="board" id="board">
+            <div class="cell" data-index="0"></div>
+            <div class="cell" data-index="1"></div>
+            <div class="cell" data-index="2"></div>
+            <div class="cell" data-index="3"></div>
+            <div class="cell" data-index="4"></div>
+            <div class="cell" data-index="5"></div>
+            <div class="cell" data-index="6"></div>
+            <div class="cell" data-index="7"></div>
+            <div class="cell" data-index="8"></div>
+        </div>
+        <button id="reset">Reset Game</button>
+    </div>
+
+    <script>
+        const board = document.getElementById('board');
+        const cells = document.querySelectorAll('.cell');
+        const result = document.getElementById('result');
+        const message = document.getElementById('message');
+        const resetButton = document.getElementById('reset');
+
+        let currentPlayer = 'X';
+        let gameBoard = ['', '', '', '', '', '', '', '', ''];
+        let gameActive = true;
+
+        const winningCombinations = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8], // Rows
+            [0, 3, 6], [1, 4, 7], [2, 5, 8], // Columns
+            [0, 4, 8], [2, 4, 6] // Diagonals
+        ];
+
+        function handleCellClick(e) {
+            const cellIndex = parseInt(e.target.getAttribute('data-index'));
+
+            if (gameBoard[cellIndex] !== '' || !gameActive) return;
+
+            gameBoard[cellIndex] = currentPlayer;
+            e.target.textContent = currentPlayer;
+
+            if (checkWin(currentPlayer)) {
+                result.textContent = "You win!";
+                message.textContent = getRandomMessage(playerWinMessages);
+                gameActive = false;
+                return;
+            }
+
+            if (checkDraw()) {
+                result.textContent = "It's a draw!";
+                message.textContent = "";
+                gameActive = false;
+                return;
+            }
+
+            currentPlayer = 'O';
+            result.textContent = "AI's turn (O)";
+            message.textContent = "";
+            setTimeout(aiMove, 500);
+        }
+
+        function aiMove() {
+            if (!gameActive) return;
+
+            let bestScore = -Infinity;
+            let bestMove;
+
+            for (let i = 0; i < 9; i++) {
+                if (gameBoard[i] === '') {
+                    gameBoard[i] = 'O';
+                    let score = minimax(gameBoard, 0, false);
+                    gameBoard[i] = '';
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestMove = i;
+                    }
+                }
+            }
+
+            gameBoard[bestMove] = 'O';
+            cells[bestMove].textContent = 'O';
+
+            if (checkWin('O')) {
+                result.textContent = "AI wins!";
+                message.textContent = getRandomMessage(aiWinMessages);
+                gameActive = false;
+                return;
+            }
+
+            if (checkDraw()) {
+                result.textContent = "It's a draw!";
+                message.textContent = "";
+                gameActive = false;
+                return;
+            }
+
+            currentPlayer = 'X';
+            result.textContent = "Your turn (X)";
+            message.textContent = "";
+        }
+
+        function minimax(board, depth, isMaximizing) {
+            if (checkWin('O')) return 1;
+            if (checkWin('X')) return -1;
+            if (checkDraw()) return 0;
+
+            if (isMaximizing) {
+                let bestScore = -Infinity;
+                for (let i = 0; i < 9; i++) {
+                    if (board[i] === '') {
+                        board[i] = 'O';
+                        let score = minimax(board, depth + 1, false);
+                        board[i] = '';
+                        bestScore = Math.max(score, bestScore);
+                    }
+                }
+                return bestScore;
+            } else {
+                let bestScore = Infinity;
+                for (let i = 0; i < 9; i++) {
+                    if (board[i] === '') {
+                        board[i] = 'X';
+                        let score = minimax(board, depth + 1, true);
+                        board[i] = '';
+                        bestScore = Math.min(score, bestScore);
+                    }
+                }
+                return bestScore;
+            }
+        }
+
+        function checkWin(player) {
+            return winningCombinations.some(combination => {
+                return combination.every(index => gameBoard[index] === player);
+            });
+        }
+
+        function checkDraw() {
+            return gameBoard.every(cell => cell !== '');
+        }
+
+        function getRandomMessage(messages) {
+            return messages[Math.floor(Math.random() * messages.length)];
+        }
+
+        const aiWinMessages = [
+            "GALINGAN MO NAMAM PAR!",
+            "Di ka tlg mananlo sakin A.i ako Eh AHAHHAHA",
+            "Hayst talo kana namna pano bayan?",
+            "Ano suko kana?",
+            "Lumalaban padin di naman manalo hayst"
+        ];
+
+        const playerWinMessages = [
+            "Impressive! You've outsmarted the machine!",
+            "A victory for humankind! Well played!",
+            "You're giving me an existential crisis. Great job!",
+            "I bow before your superior intellect... this time.",
+            "You've made John Connor proud!"
+        ];
+
+        function resetGame() {
+            gameBoard = ['', '', '', '', '', '', '', '', ''];
+            gameActive = true;
+            currentPlayer = 'X';
+            result.textContent = "Your turn (X)";
+            message.textContent = "";
+            cells.forEach(cell => cell.textContent = '');
+        }
+
+        board.addEventListener('click', handleCellClick);
+        resetButton.addEventListener('click', resetGame);
+    </script>
+</body>
+</html>
+
