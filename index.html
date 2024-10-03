@@ -177,7 +177,7 @@
         function aiMove() {
             if (!gameActive) return;
 
-            let bestScore = null;
+            let bestScore = Infinity;
             let bestMove;
 
             for (let i = 0; i < 9; i++) {
