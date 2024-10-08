@@ -177,7 +177,7 @@
         function aiMove() {
             if (!gameActive) return;
 
-            let bestScore = Infinity;
+            let bestScore = -Infinity; // Change to -Infinity to find the maximum score
             let bestMove;
 
             for (let i = 0; i < 9; i++) {
@@ -185,7 +185,7 @@
                     gameBoard[i] = 'O';
                     let score = minimax(gameBoard, 0, false);
                     gameBoard[i] = '';
-                    if (score > bestScore) {
+                    if (score > bestScore) { // Correct comparison to find the best score
                         bestScore = score;
                         bestMove = i;
                     }
